@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Generate Android project
-        run: npx expo prebuild --clean
+        run: echo "y" | npx expo prebuild --clean
         env:
           CI: 1
 
