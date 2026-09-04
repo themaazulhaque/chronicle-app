@@ -32,8 +32,6 @@ jobs:
 
       - name: Generate Android project
         run: echo "y" | npx expo prebuild --clean
-        env:
-          CI: 1
 
       - name: Verify custom native files
         run: |
