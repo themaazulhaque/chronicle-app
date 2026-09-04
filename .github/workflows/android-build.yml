@@ -1,0 +1,117 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Android project
+        run: npx expo prebuild --clean
+        env:
+          CI: 1
+
+      - name: Verify custom native files
+        run: |
+          NATIVE_DIR="android/app/src/main/java/com/chronicle/app"
+          REQUIRED_FILES=(
+            "ChronicleUsagePackage.java"
+            "ChronicleUsageModule.java"
+            "TrackingStore.kt"
+            "TrackingScheduler.kt"
+            "UsageCollectionWorker.kt"
+            "UsageSyncWorker.kt"
+            "BootReceiver.kt"
+          )
+
+          echo "Checking custom native files..."
+          for f in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$NATIVE_DIR/$f" ]; then
+              echo "MISSING: $f"
+              exit 1
+            fi
+            echo "OK: $f"
+          done
+
+          echo "Checking ChronicleUsagePackage is public..."
+          if ! grep -q "^public class ChronicleUsagePackage" "$NATIVE_DIR/ChronicleUsagePackage.java"; then
+            echo "ERROR: ChronicleUsagePackage is not public"
+            exit 1
+          fi
+
+          echo "Checking package declaration..."
+          if ! grep -q "^package com.chronicle.app;" "$NATIVE_DIR/ChronicleUsagePackage.java"; then
+            echo "ERROR: Wrong package declaration"
+            exit 1
+          fi
+
+          echo "Checking MainApplication.kt imports..."
+          if ! grep -q "import com.chronicle.app.ChronicleUsagePackage" "$NATIVE_DIR/MainApplication.kt"; then
+            echo "ERROR: MainApplication.kt missing import"
+            exit 1
+          fi
+
+          echo "Checking MainApplication.kt registration count..."
+          REG_COUNT=$(grep -c "add(ChronicleUsagePackage())" "$NATIVE_DIR/MainApplication.kt")
+          if [ "$REG_COUNT" -ne 1 ]; then
+            echo "ERROR: Expected 1 ChronicleUsagePackage registration, found $REG_COUNT"
+            exit 1
+          fi
+
+          echo "Checking WorkManager dependency in build.gradle..."
+          if ! grep -q "work-runtime" "android/app/build.gradle"; then
+            echo "ERROR: WorkManager dependency missing from build.gradle"
+            exit 1
+          fi
+
+          echo "All verifications passed!"
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Find APK
+        id: find-apk
+        run: |
+          APK_PATH=$(find android/app/build/outputs/apk -name "*.apk" -type f | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "ERROR: No APK found"
+            exit 1
+          fi
+          echo "APK found at: $APK_PATH"
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+          APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+          echo "APK size: $APK_SIZE"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chronicle-Android-APK
+          path: ${{ steps.find-apk.outputs.apk_path }}
+          retention-days: 30
