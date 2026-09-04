@@ -30,17 +30,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Remove EAS project ID
-        run: node -e "
-          const fs = require('fs');
-          const app = JSON.parse(fs.readFileSync('app.json','utf8'));
-          if (app.expo && app.expo.extra && app.expo.extra.eas) {
-            delete app.expo.extra.eas;
-          }
-          fs.writeFileSync('app.json', JSON.stringify(app, null, 2) + '\n');
-          console.log('Removed EAS project ID from app.json');
-        "
-
       - name: Generate Android project
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq expect >/dev/null 2>&1

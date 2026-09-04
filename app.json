@@ -34,10 +34,7 @@
       "./plugins/withChronicleUsageModule"
     ],
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "a06adaeb-7e7a-4c74-8503-aa2d5494e403"
-      }
+      "router": {}
     }
   }
 }
