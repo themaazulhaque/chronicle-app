@@ -31,7 +31,18 @@ jobs:
         run: npm ci
 
       - name: Generate Android project
-        run: echo "y" | npx expo prebuild --clean
+        run: |
+          sudo apt-get update && sudo apt-get install -y expect
+          expect -c '
+            spawn npx expo prebuild --clean
+            expect {
+              "Continue?" {
+                send "y\r"
+                exp_continue
+              }
+              eof {}
+            }
+          '
 
       - name: Verify custom native files
         run: |
