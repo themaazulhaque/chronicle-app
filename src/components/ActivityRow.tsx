@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { colors, spacing, typography } from '../theme';``
+import { colors, spacing, typography } from '../theme';
 import { formatTime } from '../utils/formatting';
 import { AppIcon } from './AppIcon';
 

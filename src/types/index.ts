@@ -56,6 +56,30 @@ export interface UsageSnapshot {
   error?: string;
 }
 
+export interface TrackingStatus {
+  usageAccessGranted: boolean;
+  collectionScheduled: boolean;
+  syncScheduled: boolean;
+  trackingActive: boolean;
+  networkAvailable: boolean;
+  authenticated: boolean;
+  deviceId: string | null;
+  lastCollectionAt: number | null;
+  lastSyncAt: number | null;
+  pendingSyncCount: number;
+}
+
+export interface TrackingOperationResult {
+  ok: boolean;
+  message: string;
+  collected?: number;
+  inserted?: number;
+  updated?: number;
+  synced?: number;
+  duplicates?: number;
+  invalid?: number;
+}
+
 export interface WeeklyUsage {
   days: DailyUsage[];
   totalMinutes: number;

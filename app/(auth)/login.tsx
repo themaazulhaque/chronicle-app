@@ -37,7 +37,7 @@ export default function LoginScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <Text style={styles.title}>Chronicle</Text>
+            <Text style={styles.title}>Orbit</Text>
             <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
           <View style={styles.form}>

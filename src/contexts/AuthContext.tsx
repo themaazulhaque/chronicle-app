@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { isAuthenticated, getStoredUserId, registerDevice } from '../services/api';
+import { usageTrackingService } from '../services/usageTrackingService';
 
 interface AuthState {
   isReady: boolean;
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (authed) {
         const userId = await getStoredUserId();
         const deviceResult = await registerDevice();
+        await usageTrackingService.ensureBackgroundTrackingScheduled();
         setState(prev => ({
           ...prev,
           isReady: true,

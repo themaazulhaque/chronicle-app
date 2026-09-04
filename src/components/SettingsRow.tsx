@@ -1,18 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 
 interface SettingsRowProps {
   label: string;
+  description?: string;
   value?: string;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
   onPress?: () => void;
   destructive?: boolean;
+  showChevron?: boolean;
+  loading?: boolean;
 }
 
-export function SettingsRow({ label, value, icon, iconColor, onPress, destructive }: SettingsRowProps) {
+export function SettingsRow({ label, description, value, icon, iconColor, onPress, destructive, showChevron, loading }: SettingsRowProps) {
+  const hasChevron = showChevron === true || (showChevron === undefined && false);
+
   const content = (
     <View style={styles.row}>
       {icon && (
@@ -20,17 +25,26 @@ export function SettingsRow({ label, value, icon, iconColor, onPress, destructiv
           <Ionicons name={icon} size={18} color="#FFFFFF" />
         </View>
       )}
-      <Text style={[styles.label, destructive && styles.destructive]}>{label}</Text>
+      <View style={styles.textContainer}>
+        <Text style={[styles.label, destructive && styles.destructive]}>{label}</Text>
+        {description && <Text style={styles.description}>{description}</Text>}
+      </View>
       <View style={styles.trailing}>
-        {value && <Text style={styles.value}>{value}</Text>}
-        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        {loading ? (
+          <ActivityIndicator size="small" color={colors.accent} />
+        ) : (
+          <>
+            {value && <Text style={styles.value}>{value}</Text>}
+            {hasChevron && <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />}
+          </>
+        )}
       </View>
     </View>
   );
 
   if (onPress) {
     return (
-      <Pressable style={({ pressed }) => [pressed && styles.pressed]} onPress={onPress}>
+      <Pressable style={({ pressed }) => [pressed && styles.pressed]} onPress={onPress} disabled={loading}>
         {content}
       </Pressable>
     );
@@ -58,10 +72,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.md,
   },
+  textContainer: {
+    flex: 1,
+  },
   label: {
     ...typography.body,
     color: colors.textPrimary,
-    flex: 1,
+  },
+  description: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
   destructive: {
     color: colors.danger,

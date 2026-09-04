@@ -9,7 +9,6 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { AppUsageRecord, InstalledApp, UsageSnapshot } from '../../src/types';
 import { formatDateGroupHeader, getDateKey } from '../../src/utils/formatting';
 import { usageTrackingService } from '../../src/services/usageTrackingService';
-import { usageSyncService } from '../../src/services/usageSyncService';
 import { getActivity, ActivitySession } from '../../src/services/api/usage';
 
 export default function ActivityScreen() {
@@ -18,7 +17,6 @@ export default function ActivityScreen() {
   const [snapshot, setSnapshot] = useState<UsageSnapshot | null>(null);
   const [backendSessions, setBackendSessions] = useState<ActivitySession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
 
   const isToday = getDateKey(selectedDate) === getDateKey(new Date());
 
@@ -27,12 +25,7 @@ export default function ActivityScreen() {
     const snap = await usageTrackingService.getSnapshot(selectedDate);
     setSnapshot(snap);
 
-    if (isToday && snap.canReadUsage && snap.usageRecords.length > 0 && !syncing) {
-      setSyncing(true);
-      usageSyncService.syncNow().finally(() => setSyncing(false));
-    }
-
-    if (!isToday) {
+    if (!isToday && snap.usageRecords.length === 0) {
       const dateStr = getDateKey(selectedDate);
       const result = await getActivity(dateStr);
       if (result.ok) setBackendSessions(result.sessions || []);
@@ -50,65 +43,94 @@ export default function ActivityScreen() {
   const totalMinutes = Math.round(records.reduce((total, record) => total + record.totalTimeInForeground, 0) / 60000);
   const dayHeader = formatDateGroupHeader(selectedDate);
 
-  const capabilityMessage = snapshot?.capability === 'expo-go'
-    ? { title: 'Real usage tracking unavailable', message: 'Real app usage tracking requires the Chronicle Android build. Expo Go is running the app interface, but Android usage access requires the native Chronicle module.' }
-    : snapshot?.capability === 'native-module-unavailable' ? { title: 'Usage tracking unavailable', message: 'Usage tracking module is unavailable in this build.' }
-      : snapshot?.capability === 'permission-required' ? { title: 'Usage Access required', message: 'Chronicle needs Usage Access to show your app activity.' } : null;
+  const capabilityMessage = snapshot?.capability === 'permission-required'
+    ? { title: 'Permission needed', message: 'Orbit needs Usage Access to show your app activity.' }
+    : null;
 
   const handleDateChange = (change: number) => setSelectedDate(current => { const next = new Date(current); next.setDate(next.getDate() + change); return next; });
 
-  const displayRecords = isToday ? records : [];
-  const displayBackendSessions = !isToday ? backendSessions : [];
+  const displayRecords = records.length > 0 ? records : [];
+  const displayBackendSessions = !isToday && displayRecords.length === 0 ? backendSessions : [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}><Text style={styles.largeTitle}>Activity</Text></View>
+      <View style={styles.header}>
+        <Text style={styles.largeTitle}>Activity</Text>
+      </View>
       <DateNavigator currentDate={selectedDate} onPrevious={() => handleDateChange(-1)} onNext={() => handleDateChange(1)} onToday={() => setSelectedDate(new Date())} />
       {loading && <ActivityIndicator color={colors.accent} style={styles.loader} />}
-      {!loading && capabilityMessage && isToday ? <View style={styles.messageCard}>
-        <Text style={styles.messageTitle}>{capabilityMessage.title}</Text><Text style={styles.messageText}>{capabilityMessage.message}</Text>
-        {snapshot?.capability === 'permission-required' && <Pressable accessibilityRole="button" style={styles.actionButton} onPress={() => usageTrackingService.openUsageAccessSettings()}><Text style={styles.actionText}>Allow Usage Access</Text></Pressable>}
-      </View> : !loading && <>
-        {displayRecords.length > 0 && <View style={styles.summaryBar}><Text style={styles.summaryText}>{displayRecords.length} {displayRecords.length === 1 ? 'app' : 'apps'} · {Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m</Text></View>}
-        {syncing && <View style={styles.syncBar}><ActivityIndicator size="small" color={colors.accent} /><Text style={styles.syncText}>Syncing with backend...</Text></View>}
-        <FlatList
-          data={isToday ? displayRecords : []}
-          keyExtractor={item => item.packageName}
-          contentContainerStyle={styles.listContent}
-          ListHeaderComponent={displayRecords.length > 0 ? <Text style={styles.dayHeader}>{isToday ? 'TODAY' : dayHeader}</Text> : null}
-          ListEmptyComponent={isToday ? (
-            <EmptyState icon="time-outline" title="No activity" message="No usage data was returned by Android for this period." />
-          ) : null}
-          renderItem={({ item }) => <ActivityRecordRow record={item} app={appByPackage.get(item.packageName)} onPress={() => router.push(`/app/${item.packageName}`)} />}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
-        {!isToday && displayBackendSessions.length > 0 && (
+      {!loading && capabilityMessage && isToday ? (
+        <View style={styles.messageCard}>
+          <Text style={styles.messageTitle}>{capabilityMessage.title}</Text>
+          <Text style={styles.messageText}>{capabilityMessage.message}</Text>
+          <Pressable accessibilityRole="button" style={styles.actionButton} onPress={() => usageTrackingService.openUsageAccessSettings()}>
+            <Text style={styles.actionText}>Allow Usage Access</Text>
+          </Pressable>
+        </View>
+      ) : !loading && (
+        <>
+          {displayRecords.length > 0 && (
+            <View style={styles.summaryBar}>
+              <Text style={styles.summaryText}>
+                {displayRecords.length} {displayRecords.length === 1 ? 'app' : 'apps'} · {Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m
+              </Text>
+            </View>
+          )}
           <FlatList
-            data={displayBackendSessions}
-            keyExtractor={item => item.id}
+            data={displayRecords}
+            keyExtractor={item => item.packageName}
             contentContainerStyle={styles.listContent}
-            ListHeaderComponent={<Text style={styles.dayHeader}>{dayHeader}</Text>}
+            ListHeaderComponent={displayRecords.length > 0 ? <Text style={styles.dayHeader}>{isToday ? 'TODAY' : dayHeader}</Text> : null}
+            ListEmptyComponent={isToday ? (
+              <EmptyState icon="time-outline" title="No activity" message="No usage data available for this period." />
+            ) : displayBackendSessions.length === 0 ? (
+              <EmptyState icon="time-outline" title="No activity" message="No usage data available for this period." />
+            ) : null}
             renderItem={({ item }) => (
-              <ActivityRow
-                appName={item.app_name}
-                lastTimeUsed={new Date(item.end_time).getTime()}
-                totalTimeInForeground={item.duration_seconds * 1000}
-                onPress={() => router.push(`/app/${item.package_name}`)}
+              <ActivityRecordRow
+                record={item}
+                app={appByPackage.get(item.packageName)}
+                onPress={() => router.push(`/app/${item.packageName}`)}
               />
             )}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
           />
-        )}
-        {!isToday && displayBackendSessions.length === 0 && !loading && (
-          <EmptyState icon="time-outline" title="No activity" message="No synced usage data available for this date." />
-        )}
-      </>}
+          {!isToday && displayBackendSessions.length > 0 && (
+            <FlatList
+              data={displayBackendSessions}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.listContent}
+              ListHeaderComponent={<Text style={styles.dayHeader}>{dayHeader}</Text>}
+              renderItem={({ item }) => (
+                <ActivityRow
+                  appName={item.app_name}
+                  lastTimeUsed={new Date(item.end_time).getTime()}
+                  totalTimeInForeground={item.duration_seconds * 1000}
+                  onPress={() => router.push(`/app/${item.package_name}`)}
+                />
+              )}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+            />
+          )}
+          {!isToday && displayBackendSessions.length === 0 && !loading && (
+            <EmptyState icon="time-outline" title="No activity" message="No synced data available for this date." />
+          )}
+        </>
+      )}
     </SafeAreaView>
   );
 }
 
 function ActivityRecordRow({ record, app, onPress }: { record: AppUsageRecord; app?: InstalledApp; onPress: () => void }) {
-  return <ActivityRow appName={app?.appName ?? record.packageName} appIcon={app?.icon} lastTimeUsed={record.lastTimeUsed} totalTimeInForeground={record.totalTimeInForeground} onPress={onPress} />;
+  return (
+    <ActivityRow
+      appName={app?.appName ?? record.packageName}
+      appIcon={app?.icon}
+      lastTimeUsed={record.lastTimeUsed}
+      totalTimeInForeground={record.totalTimeInForeground}
+      onPress={onPress}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
@@ -126,6 +148,4 @@ const styles = StyleSheet.create({
   messageText: { ...typography.bodySmall, color: colors.textSecondary },
   actionButton: { alignSelf: 'flex-start', minHeight: 48, justifyContent: 'center', marginTop: spacing.md },
   actionText: { ...typography.body, color: colors.accent, fontWeight: '600' },
-  syncBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, gap: spacing.sm },
-  syncText: { ...typography.caption, color: colors.textSecondary },
 });

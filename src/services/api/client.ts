@@ -1,6 +1,15 @@
 import * as SecureStore from 'expo-secure-store';
+import { NativeModules, Platform } from 'react-native';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://chronicle-backend-gvy4.onrender.com/api/v1';
+const nativeTrackingModule = NativeModules.ChronicleUsageModule as
+  | {
+      cacheAuthState?: (accessToken: string, refreshToken: string, userId: string, deviceId: string, apiBaseUrl: string) => Promise<void>;
+      clearAuthState?: () => Promise<void>;
+      scheduleBackgroundSync?: () => Promise<boolean>;
+      cancelBackgroundSync?: () => Promise<void>;
+    }
+  | undefined;
 
 export interface ApiResponse<T> {
   ok: boolean;
@@ -17,16 +26,51 @@ async function getRefreshToken(): Promise<string | null> {
   return SecureStore.getItemAsync('chronicle_refresh_token');
 }
 
+async function syncNativeAuthState(): Promise<void> {
+  if (Platform.OS !== 'android' || !nativeTrackingModule?.cacheAuthState) return;
+
+  const [accessToken, refreshToken, userId, deviceId] = await Promise.all([
+    getAccessToken(),
+    getRefreshToken(),
+    getStoredUserId(),
+    getStoredDeviceId(),
+  ]);
+
+  if (!accessToken || !refreshToken || !userId || !deviceId) return;
+
+  try {
+    await nativeTrackingModule.cacheAuthState(accessToken, refreshToken, userId, deviceId, API_URL);
+    if (nativeTrackingModule.scheduleBackgroundSync) {
+      await nativeTrackingModule.scheduleBackgroundSync();
+    }
+  } catch {
+    return;
+  }
+}
+
+async function clearNativeAuthState(): Promise<void> {
+  if (Platform.OS !== 'android' || !nativeTrackingModule?.clearAuthState) return;
+  try {
+    await nativeTrackingModule.clearAuthState();
+    if (nativeTrackingModule.cancelBackgroundSync) {
+      await nativeTrackingModule.cancelBackgroundSync();
+    }
+  } catch {
+    return;
+  }
+}
+
 export async function storeTokens(access: string, refresh: string): Promise<void> {
   await SecureStore.setItemAsync('chronicle_access_token', access);
   await SecureStore.setItemAsync('chronicle_refresh_token', refresh);
+  await syncNativeAuthState();
 }
 
 export async function clearTokens(): Promise<void> {
   await SecureStore.deleteItemAsync('chronicle_access_token');
   await SecureStore.deleteItemAsync('chronicle_refresh_token');
-  await SecureStore.deleteItemAsync('chronicle_device_id');
   await SecureStore.deleteItemAsync('chronicle_user_id');
+  await clearNativeAuthState();
 }
 
 async function refreshAccessToken(): Promise<string | null> {
@@ -112,6 +156,7 @@ export async function getStoredUserId(): Promise<string | null> {
 
 export async function storeUserId(id: string): Promise<void> {
   await SecureStore.setItemAsync('chronicle_user_id', id);
+  await syncNativeAuthState();
 }
 
 export async function getStoredDeviceId(): Promise<string | null> {
@@ -120,4 +165,5 @@ export async function getStoredDeviceId(): Promise<string | null> {
 
 export async function storeDeviceId(id: string): Promise<void> {
   await SecureStore.setItemAsync('chronicle_device_id', id);
+  await syncNativeAuthState();
 }

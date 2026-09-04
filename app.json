@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Chronicle",
+    "name": "Orbit",
     "slug": "chronicle-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#141414",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,8 +20,7 @@
       "package": "com.chronicle.app",
       "permissions": [
         "android.permission.PACKAGE_USAGE_STATS",
-        "android.permission.QUERY_ALL_PACKAGES",
-        "android.permission.SYSTEM_ALERT_WINDOW"
+        "android.permission.QUERY_ALL_PACKAGES"
       ]
     },
     "web": {
@@ -39,7 +38,6 @@
       "eas": {
         "projectId": "a06adaeb-7e7a-4c74-8503-aa2d5494e403"
       }
-    },
-    "owner": "maazul"
+    }
   }
 }

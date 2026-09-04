@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,9 +19,13 @@ const TAB_LABELS: Record<string, string> = {
   settings: 'Settings',
 };
 
+const TAB_BAR_BASE_HEIGHT = 50;
+const TAB_BAR_BOTTOM_PADDING = 8;
+
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 50 + Math.max(insets.bottom - 8, 0);
+  const bottomPadding = Math.max(insets.bottom, TAB_BAR_BOTTOM_PADDING);
+  const tabBarHeight = TAB_BAR_BASE_HEIGHT + bottomPadding;
 
   return (
     <Tabs
@@ -34,7 +38,7 @@ export default function TabLayout() {
           styles.tabBar,
           {
             height: tabBarHeight,
-            paddingBottom: Math.max(insets.bottom - 8, 0),
+            paddingBottom: bottomPadding,
           },
         ],
         tabBarItemStyle: styles.tabBarItem,
@@ -45,11 +49,7 @@ export default function TabLayout() {
         options={{
           title: TAB_LABELS.index,
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons
-              name={TAB_ICONS.index[focused ? 'focused' : 'default']}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={TAB_ICONS.index[focused ? 'focused' : 'default']} size={size} color={color} />
           ),
         }}
       />
@@ -58,11 +58,7 @@ export default function TabLayout() {
         options={{
           title: TAB_LABELS.apps,
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons
-              name={TAB_ICONS.apps[focused ? 'focused' : 'default']}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={TAB_ICONS.apps[focused ? 'focused' : 'default']} size={size} color={color} />
           ),
         }}
       />
@@ -71,11 +67,7 @@ export default function TabLayout() {
         options={{
           title: TAB_LABELS.settings,
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons
-              name={TAB_ICONS.settings[focused ? 'focused' : 'default']}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={TAB_ICONS.settings[focused ? 'focused' : 'default']} size={size} color={color} />
           ),
         }}
       />
@@ -88,6 +80,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.borderSubtle,
     backgroundColor: colors.surface,
+    position: 'absolute',
   },
   tabBarItem: {
     paddingTop: spacing.xs,
