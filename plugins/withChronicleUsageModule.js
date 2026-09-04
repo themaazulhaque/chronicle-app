@@ -20,6 +20,8 @@ const REQUIRED_PERMISSIONS = [
   'android.permission.RECEIVE_BOOT_COMPLETED',
 ];
 
+const WORKMANAGER_DEP = 'implementation("androidx.work:work-runtime-ktx:2.10.1")';
+
 const BOOT_RECEIVER_TAG = '<receiver android:name=".BootReceiver"';
 const BOOT_RECEIVER_XML = `    <receiver
       android:name=".BootReceiver"
@@ -32,17 +34,28 @@ const BOOT_RECEIVER_XML = `    <receiver
 module.exports = function withChronicleUsageModule(config) {
   config = withDangerousMod(config, ['android', async config => {
     const platformRoot = config.modRequest.platformProjectRoot;
-    const destDir = path.join(platformRoot, 'app', 'src', 'main', 'java', ...PACKAGE.split('.'));
 
+    const destDir = path.join(platformRoot, 'app', 'src', 'main', 'java', ...PACKAGE.split('.'));
     if (!fs.existsSync(destDir)) {
       fs.mkdirSync(destDir, { recursive: true });
     }
-
     for (const file of NATIVE_FILES) {
       const src = path.join(NATIVE_SRC_DIR, file);
       const dest = path.join(destDir, file);
       if (fs.existsSync(src)) {
         fs.copyFileSync(src, dest);
+      }
+    }
+
+    const buildGradle = path.join(platformRoot, 'app', 'build.gradle');
+    if (fs.existsSync(buildGradle)) {
+      let gradleText = fs.readFileSync(buildGradle, 'utf8');
+      if (!gradleText.includes('work-runtime')) {
+        gradleText = gradleText.replace(
+          /(dependencies\s*\{)/,
+          `$1\n    ${WORKMANAGER_DEP}`
+        );
+        fs.writeFileSync(buildGradle, gradleText);
       }
     }
 
