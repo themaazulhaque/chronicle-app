@@ -33,9 +33,9 @@ jobs:
       - name: Generate Android project
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq expect >/dev/null 2>&1
+          set +e
           expect -c '
             set timeout 120
-            log_user 0
             spawn node ./node_modules/.bin/expo prebuild --clean
             expect {
               "Continue?" {
@@ -45,9 +45,19 @@ jobs:
               eof {}
               timeout { exit 1 }
             }
-          '
-          echo "Prebuild completed"
-          ls -la android/app/src/main/java/com/chronicle/app/ || echo "WARNING: Directory does not exist"
+          ' > /tmp/prebuild_output.txt 2>&1
+          PREBUILD_EXIT=$?
+          set -e
+          echo "=== Expect exit code: $PREBUILD_EXIT ==="
+          cat /tmp/prebuild_output.txt
+          echo "=== Checking android directory ==="
+          ls -la android/ 2>&1 || echo "android/ does not exist"
+          ls -la android/app/ 2>&1 || echo "android/app/ does not exist"
+          ls -la android/app/src/main/java/com/chronicle/app/ 2>&1 || echo "Native files dir does not exist"
+          if [ $PREBUILD_EXIT -ne 0 ]; then
+            echo "ERROR: Prebuild failed with exit code $PREBUILD_EXIT"
+            exit 1
+          fi
 
       - name: Verify custom native files
         run: |
