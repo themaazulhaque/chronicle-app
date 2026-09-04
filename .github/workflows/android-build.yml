@@ -30,34 +30,45 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate Android project
+      - name: Temporarily change package name for prebuild
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq expect >/dev/null 2>&1
-          set +e
-          expect -c '
-            set timeout 120
-            spawn node ./node_modules/.bin/expo prebuild --clean
-            expect {
-              "Continue?" {
-                send "y\r"
-                exp_continue
-              }
-              eof {}
-              timeout { exit 1 }
-            }
-          ' > /tmp/prebuild_output.txt 2>&1
-          PREBUILD_EXIT=$?
-          set -e
-          echo "=== Expect exit code: $PREBUILD_EXIT ==="
-          cat /tmp/prebuild_output.txt
-          echo "=== Checking android directory ==="
-          ls -la android/ 2>&1 || echo "android/ does not exist"
-          ls -la android/app/ 2>&1 || echo "android/app/ does not exist"
-          ls -la android/app/src/main/java/com/chronicle/app/ 2>&1 || echo "Native files dir does not exist"
-          if [ $PREBUILD_EXIT -ne 0 ]; then
-            echo "ERROR: Prebuild failed with exit code $PREBUILD_EXIT"
-            exit 1
-          fi
+          sed -i 's/com.chronicle.app/com.chronicle.orbit.app/g' app.json
+          echo "Changed package name to com.chronicle.orbit.app for prebuild"
+
+      - name: Generate Android project
+        run: npx expo prebuild --clean --no-install
+
+      - name: Restore package name
+        run: |
+          sed -i 's/com.chronicle.orbit.app/com.chronicle.app/g' app.json
+          echo "Restored package name to com.chronicle.app"
+
+      - name: Rename package directory
+        run: |
+          mkdir -p android/app/src/main/java/com/chronicle/app
+          cp -r android/app/src/main/java/com/chronicle/orbit/app/* android/app/src/main/java/com/chronicle/app/
+          rm -rf android/app/src/main/java/com/chronicle/orbit
+          echo "Renamed package directory"
+
+      - name: Fix package declarations in source files
+        run: |
+          find android/app/src/main/java/com/chronicle/app -type f \( -name "*.java" -o -name "*.kt" \) -exec sed -i 's/com\.chronicle\.orbit\.app/com.chronicle.app/g' {} +
+          echo "Fixed package declarations"
+
+      - name: Apply native module
+        run: node plugins/apply-native-module.js
+
+      - name: Fix package name in generated Android files
+        run: |
+          sed -i 's/com.chronicle.orbit.app/com.chronicle.app/g' android/app/build.gradle
+          sed -i 's/com.chronicle.orbit.app/com.chronicle.app/g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/com.chronicle.orbit.app/com.chronicle.app/g' android/settings.gradle
+          sed -i 's/com.chronicle.orbit.app/com.chronicle.app/g' android/gradle.properties
+          find android -type f -name "*.xml" -exec sed -i 's/com\.chronicle\.orbit\.app/com.chronicle.app/g' {} +
+          find android -type f -name "*.gradle" -exec sed -i 's/com\.chronicle\.orbit\.app/com.chronicle.app/g' {} +
+          find android -type f -name "*.kt" -exec sed -i 's/com\.chronicle\.orbit\.app/com.chronicle.app/g' {} +
+          find android -type f -name "*.java" -exec sed -i 's/com\.chronicle\.orbit\.app/com.chronicle.app/g' {} +
+          echo "Fixed all package name references"
 
       - name: Verify custom native files
         run: |
