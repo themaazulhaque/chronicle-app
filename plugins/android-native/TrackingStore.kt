@@ -176,7 +176,7 @@ object TrackingStore {
     return context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
   }
 
-  fun isUsageAccessGranted(context: Context): Boolean {
+  @JvmStatic fun isUsageAccessGranted(context: Context): Boolean {
     return try {
       val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
       val mode = appOps.checkOpNoThrow(
@@ -208,7 +208,7 @@ object TrackingStore {
     }
   }
 
-  fun cacheAuthState(
+  @JvmStatic fun cacheAuthState(
     context: Context,
     accessToken: String,
     refreshToken: String,
@@ -226,7 +226,7 @@ object TrackingStore {
     Log.d(TAG, "Auth state cached for device $deviceId")
   }
 
-  fun clearAuthState(context: Context) {
+  @JvmStatic fun clearAuthState(context: Context) {
     readPreferences(context).edit()
       .remove(KEY_ACCESS_TOKEN)
       .remove(KEY_REFRESH_TOKEN)
@@ -242,18 +242,18 @@ object TrackingStore {
   fun getRefreshToken(context: Context): String? = readPreferences(context).getString(KEY_REFRESH_TOKEN, null)
   fun getUserId(context: Context): String? = readPreferences(context).getString(KEY_USER_ID, null)
 
-  fun markCollectionScheduled(context: Context, scheduled: Boolean) {
+  @JvmStatic fun markCollectionScheduled(context: Context, scheduled: Boolean) {
     setMetadata(context, KEY_COLLECTION_SCHEDULED, if (scheduled) "1" else "0")
   }
 
-  fun markSyncScheduled(context: Context, scheduled: Boolean) {
+  @JvmStatic fun markSyncScheduled(context: Context, scheduled: Boolean) {
     setMetadata(context, KEY_SYNC_SCHEDULED, if (scheduled) "1" else "0")
   }
 
   fun isCollectionScheduled(context: Context): Boolean = getMetadata(context, KEY_COLLECTION_SCHEDULED) == "1"
   fun isSyncScheduled(context: Context): Boolean = getMetadata(context, KEY_SYNC_SCHEDULED) == "1"
 
-  fun getPendingSyncCount(context: Context): Int {
+  @JvmStatic fun getPendingSyncCount(context: Context): Int {
     val db = TrackingDatabaseHelper(context).readableDatabase
     return try {
       db.rawQuery(
@@ -267,10 +267,10 @@ object TrackingStore {
     }
   }
 
-  fun getLastCollectionTimestamp(context: Context): Long? = getMetadata(context, KEY_LAST_COLLECTION)?.toLongOrNull()
+  @JvmStatic fun getLastCollectionTimestamp(context: Context): Long? = getMetadata(context, KEY_LAST_COLLECTION)?.toLongOrNull()
   fun getLastSyncTimestamp(context: Context): Long? = getMetadata(context, KEY_LAST_SYNC)?.toLongOrNull()
 
-  fun getTrackingSummary(context: Context): TrackingSummary {
+  @JvmStatic fun getTrackingSummary(context: Context): TrackingSummary {
     val authenticated = !getAccessToken(context).isNullOrBlank() && !getRefreshToken(context).isNullOrBlank()
     val usageAccessGranted = isUsageAccessGranted(context)
     val collectionScheduled = isCollectionScheduled(context)
@@ -291,7 +291,7 @@ object TrackingStore {
     )
   }
 
-  fun collectUsageSinceLastTimestamp(context: Context): NativeActionResult {
+  @JvmStatic fun collectUsageSinceLastTimestamp(context: Context): NativeActionResult {
     if (!isUsageAccessGranted(context)) {
       return NativeActionResult(false, "Usage access is not granted.")
     }
@@ -409,7 +409,7 @@ object TrackingStore {
     }
   }
 
-  fun syncPendingUsage(context: Context): NativeActionResult {
+  @JvmStatic fun syncPendingUsage(context: Context): NativeActionResult {
     val deviceId = getDeviceId(context)
     if (deviceId.isNullOrBlank()) {
       return NativeActionResult(false, "Device is not registered.")
@@ -502,7 +502,7 @@ object TrackingStore {
     )
   }
 
-  fun getStoredUsageStats(context: Context, startTime: Long, endTime: Long): List<UsageSummaryRecord> {
+  @JvmStatic fun getStoredUsageStats(context: Context, startTime: Long, endTime: Long): List<UsageSummaryRecord> {
     val db = TrackingDatabaseHelper(context).readableDatabase
     val recordsByPackage = linkedMapOf<String, MutableList<UsageSummaryRecord>>()
     db.rawQuery(

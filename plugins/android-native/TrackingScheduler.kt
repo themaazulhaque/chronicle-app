@@ -17,7 +17,7 @@ object TrackingScheduler {
   const val IMMEDIATE_COLLECTION_WORK_NAME = "orbit_usage_collection_now"
   const val IMMEDIATE_SYNC_WORK_NAME = "orbit_usage_sync_now"
 
-  fun scheduleCollection(context: Context): Boolean {
+  @JvmStatic fun scheduleCollection(context: Context): Boolean {
     if (!TrackingStore.isUsageAccessGranted(context)) {
       return false
     }
@@ -36,7 +36,7 @@ object TrackingScheduler {
     return true
   }
 
-  fun scheduleSync(context: Context): Boolean {
+  @JvmStatic fun scheduleSync(context: Context): Boolean {
     if (!TrackingStore.hasSyncCredentials(context)) {
       return false
     }
@@ -61,7 +61,7 @@ object TrackingScheduler {
     return true
   }
 
-  fun cancelSync(context: Context) {
+  @JvmStatic fun cancelSync(context: Context) {
     WorkManager.getInstance(context).cancelUniqueWork(SYNC_WORK_NAME)
     WorkManager.getInstance(context).cancelUniqueWork(IMMEDIATE_SYNC_WORK_NAME)
     TrackingStore.markSyncScheduled(context, false)
