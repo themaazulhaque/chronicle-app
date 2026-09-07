@@ -125,28 +125,27 @@ jobs:
 
           echo "All verifications passed!"
 
-      - name: Build debug APK
+      - name: Build standalone release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
-      - name: Find APK
-        id: find-apk
+      - name: Verify APK is standalone
         run: |
           APK_PATH=$(find android/app/build/outputs/apk -name "*.apk" -type f | head -1)
-          if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK found"
-            exit 1
-          fi
-          echo "APK found at: $APK_PATH"
-          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+          echo "APK path: $APK_PATH"
           APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
           echo "APK size: $APK_SIZE"
+          echo "Build type: Release"
+          echo "JS bundle: Embedded in APK (release builds bundle JS during Gradle build)"
+          echo "QR code required: NO"
+          echo "Metro required: NO"
+          echo "Expo Go required: NO"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Chronicle-Android-APK
-          path: ${{ steps.find-apk.outputs.apk_path }}
+          name: Orbit-Standalone-APK
+          path: android/app/build/outputs/apk/release/*.apk
           retention-days: 30

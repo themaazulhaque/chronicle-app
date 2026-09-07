@@ -18,6 +18,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.chronicle.app",
+      "versionCode": 2,
       "permissions": [
         "android.permission.PACKAGE_USAGE_STATS",
         "android.permission.QUERY_ALL_PACKAGES"
@@ -30,7 +31,6 @@
       "expo-router",
       "expo-font",
       "expo-secure-store",
-      "expo-dev-client",
       "./plugins/withChronicleUsageModule"
     ],
     "extra": {
