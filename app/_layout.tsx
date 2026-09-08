@@ -1,32 +1,16 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet, ActivityIndicator, View } from 'react-native';
-import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 import { colors } from '../src/theme';
 import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
+import { AppSkeleton } from '../src/components/AppSkeleton';
 
 function RootLayoutNav() {
-  const router = useRouter();
-  const segments = useSegments();
-  const { isReady, isLoggedIn } = useAuth();
-
-  useEffect(() => {
-    if (!isReady) return;
-    const inAuthGroup = segments[0] === '(auth)';
-    if (!isLoggedIn && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (isLoggedIn && inAuthGroup) {
-      router.replace('/(tabs)');
-    }
-  }, [isReady, isLoggedIn, segments]);
+  const { isReady } = useAuth();
 
   if (!isReady) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.accent} />
-      </View>
-    );
+    return <AppSkeleton />;
   }
 
   return (
@@ -38,8 +22,8 @@ function RootLayoutNav() {
         animationDuration: 200,
       }}
     >
-      <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
       <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+      <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
       <Stack.Screen name="app/[id]" options={{ presentation: 'card', animation: 'slide_from_right' }} />
     </Stack>
   );
@@ -59,12 +43,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: colors.background,
   },
 });

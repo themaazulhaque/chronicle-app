@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           deviceId: deviceResult.deviceId || null,
         }));
       } else {
+        await usageTrackingService.ensureBackgroundTrackingScheduled();
         setState(prev => ({
           ...prev,
           isReady: true,

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert, AppState } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { colors, spacing, typography } from '../../src/theme';
 import { GroupedSection } from '../../src/components/GroupedSection';
 import { SettingsRow } from '../../src/components/SettingsRow';
@@ -14,7 +13,6 @@ import { TrackingStatus } from '../../src/types';
 const HEALTH_URL = 'https://chronicle-backend-gvy4.onrender.com/health';
 
 export default function SettingsScreen() {
-  const router = useRouter();
   const auth = useAuth();
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(usageSyncService.getStatus());
   const [trackingStatus, setTrackingStatus] = useState<TrackingStatus>({
@@ -88,7 +86,7 @@ export default function SettingsScreen() {
   const handleLogout = async () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: async () => { await logout(); auth.refreshAuth(); router.replace('/(auth)/login'); } },
+      { text: 'Sign Out', style: 'destructive', onPress: async () => { await logout(); auth.refreshAuth(); } },
     ]);
   };
 
