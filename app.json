@@ -2,11 +2,16 @@
   "expo": {
     "name": "Orbit",
     "slug": "chronicle-app",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "chronicle",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -18,7 +23,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.chronicle.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "android.permission.PACKAGE_USAGE_STATS",
         "android.permission.QUERY_ALL_PACKAGES"

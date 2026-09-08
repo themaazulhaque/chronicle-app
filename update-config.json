@@ -1,0 +1,12 @@
+{
+  "latestVersionCode": 3,
+  "latestVersionName": "1.1.0",
+  "updateRequired": false,
+  "downloadUrl": "https://github.com/themaazulhaque/chronicle-app/releases",
+  "releaseNotes": [
+    "Orbit branded splash screen",
+    "Automatic update checking",
+    "Check for Updates in Settings",
+    "Improved app startup experience"
+  ]
+}

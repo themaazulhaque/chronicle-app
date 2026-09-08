@@ -4,11 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../src/theme';
 import { GroupedSection } from '../../src/components/GroupedSection';
 import { SettingsRow } from '../../src/components/SettingsRow';
+import { UpdateModal } from '../../src/components/UpdateModal';
 import { usageTrackingService } from '../../src/services/usageTrackingService';
 import { usageSyncService, SyncStatus } from '../../src/services/usageSyncService';
 import { getStoredDeviceId, logout } from '../../src/services/api';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { TrackingStatus } from '../../src/types';
+import { checkForUpdate, getInstalledVersionName, UpdateInfo } from '../../src/services/updateService';
 
 const HEALTH_URL = 'https://chronicle-backend-gvy4.onrender.com/health';
 
@@ -31,6 +33,10 @@ export default function SettingsScreen() {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [syncLoading, setSyncLoading] = useState(false);
   const [refreshLoading, setRefreshLoading] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [installedVersion] = useState(() => getInstalledVersionName());
 
   const refreshTrackingStatus = useCallback(async () => {
     const status = await usageTrackingService.getTrackingStatus();
@@ -88,6 +94,23 @@ export default function SettingsScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign Out', style: 'destructive', onPress: async () => { await logout(); auth.refreshAuth(); } },
     ]);
+  };
+
+  const handleCheckForUpdate = async () => {
+    setUpdateLoading(true);
+    try {
+      const update = await checkForUpdate();
+      setUpdateLoading(false);
+      if (update) {
+        setUpdateInfo(update);
+        setShowUpdateModal(true);
+      } else {
+        Alert.alert('No Updates', 'You are running the latest version of Orbit.');
+      }
+    } catch {
+      setUpdateLoading(false);
+      Alert.alert('Check Failed', 'Unable to check for updates. Please try again later.');
+    }
   };
 
   const permission = usageTrackingService.isExpoGo()
@@ -232,12 +255,29 @@ export default function SettingsScreen() {
         <GroupedSection header="About">
           <SettingsRow
             label="Orbit"
-            value="Version 1.0.0"
+            value={`Version ${installedVersion}`}
             icon="information-circle"
             iconColor={colors.accent}
           />
+          <View style={styles.separator} />
+          <SettingsRow
+            label="Check for Updates"
+            description="See if a newer version of Orbit is available."
+            icon="arrow-up-circle"
+            iconColor={colors.accent}
+            onPress={handleCheckForUpdate}
+            loading={updateLoading}
+          />
         </GroupedSection>
       </ScrollView>
+      <UpdateModal
+        visible={showUpdateModal}
+        updateInfo={updateInfo}
+        onDismiss={() => {
+          setShowUpdateModal(false);
+          setUpdateInfo(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
