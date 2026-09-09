@@ -111,3 +111,65 @@ export interface TimeRange {
   start: Date;
   end: Date;
 }
+
+export type RunningAppStatus = 'foreground' | 'recent' | 'active' | 'background';
+
+export type RunningAppProcessState = 'foreground' | 'background' | 'foreground-service' | 'unknown';
+
+export interface RunningApp {
+  packageName: string;
+  appName: string;
+  icon?: string;
+  status: RunningAppStatus;
+  lastTimeUsed: number;
+  standbyBucket: number;
+  standbyBucketLabel: string;
+  processImportance: number;
+  processState: RunningAppProcessState;
+}
+
+export interface CurrentForegroundApp {
+  packageName: string;
+  appName: string;
+  icon?: string;
+  lastTimeUsed: number;
+}
+
+export interface SystemMemoryInfo {
+  totalMem: number;
+  availMem: number;
+  threshold: number;
+  lowMemory: boolean;
+}
+
+export interface OrbitProcessInfo {
+  totalPss: number;
+  dalvikPss: number;
+  nativePss: number;
+  otherPss: number;
+  dalvikPrivateDirty: number;
+  nativePrivateDirty: number;
+  otherPrivateDirty: number;
+  summary: {
+    javaHeap: string;
+    nativeHeap: string;
+    code: string;
+    stack: string;
+    graphics: string;
+    privateOther: string;
+    system: string;
+    totalPss: string;
+    totalSwap: string;
+    totalSwapPss: string;
+  };
+}
+
+export interface RunningAppsSnapshot {
+  runningApps: RunningApp[];
+  foregroundApp: CurrentForegroundApp | null;
+  systemMemory: SystemMemoryInfo | null;
+  orbitProcess: OrbitProcessInfo | null;
+  queriedAt: number;
+  usageAccessGranted: boolean;
+  error?: string;
+}

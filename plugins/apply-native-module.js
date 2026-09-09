@@ -7,6 +7,7 @@ const NATIVE_SRC_DIR = path.join(__dirname, 'android-native');
 const NATIVE_FILES = [
   'ChronicleUsagePackage.java',
   'ChronicleUsageModule.java',
+  'RunningAppsModule.java',
   'TrackingStore.kt',
   'TrackingScheduler.kt',
   'UsageCollectionWorker.kt',

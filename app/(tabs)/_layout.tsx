@@ -9,12 +9,14 @@ type IoniconsName = keyof typeof Ionicons.glyphMap;
 
 const TAB_ICONS: Record<string, { focused: IoniconsName; default: IoniconsName }> = {
   index: { focused: 'time', default: 'time-outline' },
+  running: { focused: 'phone-portrait', default: 'phone-portrait-outline' },
   apps: { focused: 'grid', default: 'grid-outline' },
   settings: { focused: 'settings', default: 'settings-outline' },
 };
 
 const TAB_LABELS: Record<string, string> = {
   index: 'Activity',
+  running: 'Running',
   apps: 'Apps',
   settings: 'Settings',
 };
@@ -50,6 +52,15 @@ export default function TabLayout() {
           title: TAB_LABELS.index,
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={TAB_ICONS.index[focused ? 'focused' : 'default']} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="running"
+        options={{
+          title: TAB_LABELS.running,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={TAB_ICONS.running[focused ? 'focused' : 'default']} size={size} color={color} />
           ),
         }}
       />
